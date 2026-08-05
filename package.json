@@ -9,16 +9,19 @@
     "test:watch": "jest --watch"
   },
   "keywords": [
-    "validation",
     "form",
+    "validation",
+    "validator",
     "zero-dependency",
-    "vanilla-js"
+    "vanilla-js",
+    "html-validation"
   ],
   "author": "Mayuresh Pandit",
   "license": "MIT",
   "devDependencies": {
     "eslint": "^10.8.0",
     "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "prettier": "^3.9.6"
   }
 }
