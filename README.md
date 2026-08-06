@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-green.svg)](#)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](src/index.d.ts)
+[![npm version](https://img.shields.io/npm/v/universal-form-validator.svg)](https://www.npmjs.com/package/universal-form-validator)
 
 A lightweight, lightning-fast, and zero-dependency form validation library created by **Mayuresh Pandit**. Use it declaratively via HTML attributes (**Zero-JS Mode**) or programmatically via the **JavaScript/TypeScript API**.
 
