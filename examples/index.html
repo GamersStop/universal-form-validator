@@ -1,40 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zero-JS Validator Test</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #f4f4f5; padding: 2rem; }
-    .card { max-width: 400px; margin: 0 auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .input-group { margin-bottom: 1.5rem; }
-    label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9em; }
-    input { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    button { width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f4f4f5;
+      padding: 2rem;
+    }
+
+    .card {
+      max-width: 400px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      font-size: 0.9em;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="card">
     <h2>Create Account</h2>
-    
+
     <!-- The data-validator attribute triggers our script -->
     <form data-validator action="/success-page">
-      
+
       <div class="input-group">
         <label>Username</label>
-        <input type="text" name="username" data-rules="required">
+        <input type="text" name="username" data-rules="required|minLength:3|maxLength:10" data-trigger="input">
       </div>
-      
+
       <div class="input-group">
         <label>Email Address</label>
-        <input type="text" name="email" data-rules="required|email" data-msg-required="We need an email to send your receipt.">
+        <input type="text" name="email" data-rules="required|email"
+          data-msg-required="We need an email to send your receipt." data-trigger="blur">
       </div>
 
       <div class="input-group">
         <label>Age</label>
-        <input type="text" name="age" data-rules="strictNumeric" data-msg-strictnumeric="Please type a number, not words.">
+        <input type="text" name="age" data-rules="strictNumeric"
+          data-msg-strictnumeric="Please type a number, not words.">
+      </div>
+
+      <div class="input-group">
+        <label>Bio / Comments</label>
+        <input type="text" name="bio" data-rules="safeText|maxLength:50"
+          data-msg-safetext="No malicious characters allowed!">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" name="password" data-rules="required|passwordStrict">
+      </div>
+
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input type="password" name="confirmPassword" data-msg-match="Password did not match"
+          data-rules="required|match:password">
+      </div>
+
+      <div class="input-group">
+        <label>Start Date</label>
+        <input type="date" name="startDate" data-rules="required|date">
+      </div>
+
+      <div class="input-group">
+        <label>End Date</label>
+        <input type="date" name="endDate" data-rules="required|date|dateAfter:startDate"
+          data-msg-dateafter="End date must be after the start date.">
+      </div>
+
+      <div class="input-group">
+        <label>Phone Number</label>
+        <input type="tel" name="phone" data-rules="required|phone"
+          data-msg-phone="Please provide a valid phone number format.">
+      </div>
+
+      <div class="input-group">
+        <label>
+          <input type="checkbox" name="terms" data-rules="required"
+            data-msg-required="You must agree to the terms and conditions.">
+          I accept the terms and conditions
+        </label>
       </div>
 
       <button type="submit">Register</button>
@@ -44,4 +131,5 @@
   <!-- Load our bundled library -->
   <script src="../dist/validator.min.js"></script>
 </body>
+
 </html>

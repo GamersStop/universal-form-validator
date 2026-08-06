@@ -2,8 +2,8 @@ const { UniversalValidator } = require('./validator');
 const { rules: builtInRules } = require('./rules');
 
 const injectStyles = () => {
-  if (document.getElementById('uv-styles')) return; 
-  
+  if (document.getElementById('uv-styles')) return;
+
   const style = document.createElement('style');
   style.id = 'uv-styles';
   style.textContent = `
@@ -27,70 +27,106 @@ const injectStyles = () => {
   document.head.appendChild(style);
 };
 
+const validateField = (input, form) => {
+  const fieldName = input.name;
+  if (!fieldName) return true;
+
+  const existingError = input.parentNode.querySelector('.uv-error-text');
+  if (existingError) existingError.remove();
+  input.classList.remove('uv-input-error');
+  input.removeAttribute('aria-invalid');
+
+  const rulesString = input.getAttribute('data-rules') || '';
+  const rulesArray = rulesString.split('|').map(ruleToken => {
+    let ruleName = ruleToken;
+    let ruleArg = null;
+
+    if (ruleToken.includes(':')) {
+      const parts = ruleToken.split(':');
+      ruleName = parts[0];
+      ruleArg = parts[1];
+    }
+
+    const customMsg = input.getAttribute(`data-msg-${ruleName.toLowerCase()}`);
+
+    if (customMsg && builtInRules[ruleName]) {
+      const ruleDef = builtInRules[ruleName];
+      const validatorFn = (typeof ruleDef === 'function' && ruleArg !== null)
+        ? ruleDef(ruleArg)
+        : ruleDef;
+
+      return (val, allData) => {
+        const error = typeof validatorFn === 'function' ? validatorFn(val, allData) : null;
+        return error ? customMsg : null;
+      };
+    }
+
+    return ruleToken;
+  });
+
+  const allInputs = form.querySelectorAll('[data-rules]');
+  const data = {};
+  allInputs.forEach(inp => {
+    if (inp.name) {
+      data[inp.name] = inp.type === 'checkbox' ? inp.checked : inp.value;
+    }
+  });
+
+  const validator = new UniversalValidator({ [fieldName]: rulesArray });
+  const result = validator.validate(data);
+
+  if (result.errors[fieldName]) {
+    const errorMsg = result.errors[fieldName];
+    input.classList.add('uv-input-error');
+    input.setAttribute('aria-invalid', 'true');
+
+    const span = document.createElement('span');
+    span.className = 'uv-error-text';
+    span.textContent = errorMsg;
+    input.parentNode.insertBefore(span, input.nextSibling);
+    return false;
+  }
+  return true;
+};
 
 const initAutoBind = () => {
   const forms = document.querySelectorAll('form[data-validator]');
-  if (forms.length === 0) return; 
+  if (forms.length === 0) return;
 
   injectStyles();
 
   forms.forEach(form => {
+    const formTrigger = form.getAttribute('data-trigger') || 'submit';
+    const inputs = form.querySelectorAll('[data-rules]');
+
+    inputs.forEach(input => {
+      const trigger = input.getAttribute('data-trigger') || formTrigger;
+
+      if (trigger === 'blur') {
+        input.addEventListener('blur', () => validateField(input, form));
+      } else if (trigger === 'input' || trigger === 'keypress') {
+        input.addEventListener('input', () => validateField(input, form));
+      }
+    });
+
     form.addEventListener('submit', (e) => {
-      e.preventDefault(); 
+      e.preventDefault();
 
-      form.querySelectorAll('.uv-error-text').forEach(el => el.remove());
-      form.querySelectorAll('.uv-input-error').forEach(el => {
-        el.classList.remove('uv-input-error');
-        el.removeAttribute('aria-invalid');
-      });
-
-      const schema = {};
-      const inputs = form.querySelectorAll('[data-rules]');
+      let formIsValid = true;
+      let firstInvalidInput = null;
 
       inputs.forEach(input => {
-        const fieldName = input.name;
-        if (!fieldName) {
-          console.warn('Universal Validator: Input is missing a "name" attribute.', input);
-          return;
+        const isValid = validateField(input, form);
+        if (!isValid) {
+          formIsValid = false;
+          if (!firstInvalidInput) firstInvalidInput = input;
         }
-
-        const rulesString = input.getAttribute('data-rules');
-      
-        const rulesArray = rulesString.split('|').map(ruleName => {
-          
-          const customMsg = input.getAttribute(`data-msg-${ruleName.toLowerCase()}`);
-          
-          if (customMsg && builtInRules[ruleName]) {
-            return (val) => (builtInRules[ruleName](val) ? customMsg : null);
-          }
-          
-          return ruleName;
-        });
-
-        schema[fieldName] = rulesArray;
       });
 
-      const formData = new FormData(form);
-      const data = Object.fromEntries(formData.entries());
-
-      const validator = new UniversalValidator(schema);
-      const result = validator.validate(data);
-
-      if (!result.isValid) {
-        for (const [field, errorMsg] of Object.entries(result.errors)) {
-          const input = form.elements[field];
-          if (input) {
-            input.classList.add('uv-input-error');
-            input.setAttribute('aria-invalid', 'true');
-            
-            const span = document.createElement('span');
-            span.className = 'uv-error-text';
-            span.textContent = errorMsg;
-            input.parentNode.insertBefore(span, input.nextSibling);
-          }
-        }
-      } else {
+      if (formIsValid) {
         form.submit();
+      } else if (firstInvalidInput) {
+        firstInvalidInput.focus();
       }
     });
   });
