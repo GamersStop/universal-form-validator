@@ -166,6 +166,93 @@ const rules = {
     return (sum % 10 === 0) ? null : 'Please enter a valid credit card number.';
   },
 
+  oneOf: (allowedValues) => {
+    const list = typeof allowedValues === 'string'
+      ? allowedValues.split(',').map(v => v.trim())
+      : allowedValues;
+
+    return (value) => {
+      if (!value) return 'Please select a valid option.';
+      const isValid = Array.isArray(list) ? list.includes(value) : Object.values(list).includes(value);
+      return isValid ? null : 'Please select a valid option.';
+    };
+  },
+
+  dateTime: (value) => {
+    if (!value) return 'Please enter a valid date and time.';
+    const d = new Date(value);
+    return (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}/.test(value))
+      ? null
+      : 'Please enter a valid date and time.';
+  },
+
+  dateTimeAfter: (startDateField) => {
+    return (value, allData) => {
+      if (!value) return 'Please select a valid date and time.';
+      const startValue = allData[startDateField];
+
+      if (!startValue) return null;
+
+      const startTime = new Date(startValue).getTime();
+      const endTime = new Date(value).getTime();
+
+      if (isNaN(startTime) || isNaN(endTime)) {
+        return 'Please enter valid date and time values.';
+      }
+
+      return endTime > startTime ? null : 'End date and time must be after the start date and time.';
+    };
+  },
+
+  minDate: (value) => {
+    if (!value) return 'Please enter a valid date.';
+    const inputDate = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    inputDate.setHours(0, 0, 0, 0);
+
+    return inputDate >= today ? null : 'Date must be today or in the future.';
+  },
+
+  maxDate: (value) => {
+    if (!value) return 'Please enter a valid date.';
+    const inputDate = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    inputDate.setHours(0, 0, 0, 0);
+
+    return inputDate <= today ? null : 'Date must be today or in the past.';
+  },
+
+  minDateTime: (value) => {
+    if (!value) return 'Please enter a valid date and time.';
+    const inputTime = new Date(value).getTime();
+    const now = new Date().getTime();
+
+    return inputTime >= now ? null : 'Date and time must be now or in the future.';
+  },
+
+  maxDateTime: (value) => {
+    if (!value) return 'Please enter a valid date and time.';
+    const inputTime = new Date(value).getTime();
+    const now = new Date().getTime();
+
+    return inputTime <= now ? null : 'Date and time must be now or in the past.';
+  },
+
+  pattern: (regexString) => {
+    return (value) => {
+      if (!value) return null;
+
+      try {
+        const regex = new RegExp(regexString);
+        return regex.test(String(value)) ? null : 'Please match the requested format.';
+      } catch (e) {
+        return 'Invalid validation pattern configuration.';
+      }
+    };
+  },
+
   register(ruleName, validatorFn) {
     if (typeof ruleName === 'string' && typeof validatorFn === 'function') {
       this[ruleName.toLowerCase()] = validatorFn;

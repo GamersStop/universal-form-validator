@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zero-JS Validator Test</title>
+  <title>Zero-JS Validator Comprehensive Test</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -13,7 +13,7 @@
     }
 
     .card {
-      max-width: 400px;
+      max-width: 450px;
       margin: 0 auto;
       background: white;
       padding: 2rem;
@@ -40,6 +40,11 @@
       box-sizing: border-box;
     }
 
+    input[type="checkbox"] {
+      width: auto;
+      margin-right: 0.5rem;
+    }
+
     button {
       width: 100%;
       padding: 0.75rem;
@@ -60,93 +65,171 @@
 <body>
 
   <div class="card">
-    <h2>Create Account</h2>
+    <h2>Comprehensive Validator Test</h2>
 
     <!-- The data-validator attribute triggers our script -->
     <form data-validator action="/success-page">
 
+      <!-- 1. required, minLength, maxLength -->
       <div class="input-group">
-        <label>Username</label>
+        <label>Username (required, min: 3, max: 10)</label>
         <input type="text" name="username" data-rules="required|minLength:3|maxLength:10" data-trigger="input">
       </div>
 
+      <!-- 2. email -->
       <div class="input-group">
-        <label>Email Address</label>
+        <label>Email Address (required|email)</label>
         <input type="text" name="email" data-rules="required|email"
           data-msg-required="We need an email to send your receipt." data-trigger="blur">
       </div>
 
+      <!-- 3. alphaLetters -->
       <div class="input-group">
-        <label>First Name</label>
+        <label>First Name (required|alphaLetters)</label>
         <input type="text" name="firstName" data-rules="required|alphaLetters"
           data-msg-alphaletters="Names can only contain letters.">
       </div>
 
+      <!-- 4. alphaNumeric -->
       <div class="input-group">
-        <label>Last Name</label>
-        <input type="text" name="lastName" data-rules="required|alphaLetters"
-          data-msg-alphaletters="Names can only contain letters.">
+        <label>User ID Code (alphaNumeric)</label>
+        <input type="text" name="userId" data-rules="alphaNumeric"
+          data-msg-alphanumeric="Only letters and numbers are permitted here.">
       </div>
 
+      <!-- 5. strictNumeric -->
       <div class="input-group">
-        <label>Age</label>
+        <label>Age (strictNumeric)</label>
         <input type="text" name="age" data-rules="strictNumeric"
-          data-msg-strictnumeric="Please type a number, not words.">
+          data-msg-strictnumeric="Please type a whole number, not words.">
       </div>
 
+      <!-- 6. safeText -->
       <div class="input-group">
-        <label>Bio / Comments</label>
+        <label>Bio / Comments (safeText|maxLength:50)</label>
         <input type="text" name="bio" data-rules="safeText|maxLength:50"
           data-msg-safetext="No malicious characters allowed!">
       </div>
 
+      <!-- 7. urlValid -->
       <div class="input-group">
-        <label>Password</label>
+        <label>Personal Website (urlValid)</label>
+        <input type="text" name="website" data-rules="urlValid"
+          data-msg-urlvalid="Please provide a valid URL starting with http:// or https://">
+      </div>
+
+      <!-- 8. passwordStrict -->
+      <div class="input-group">
+        <label>Password (required|passwordStrict)</label>
         <input type="password" name="password" data-rules="required|passwordStrict">
       </div>
 
+      <!-- 9. match -->
       <div class="input-group">
-        <label>Confirm Password</label>
+        <label>Confirm Password (required|match:password)</label>
         <input type="password" name="confirmPassword" data-msg-match="Password did not match"
           data-rules="required|match:password">
       </div>
 
+      <!-- 10. date -->
       <div class="input-group">
-        <label>Start Date</label>
+        <label>Start Date (required|date)</label>
         <input type="date" name="startDate" data-rules="required|date">
       </div>
 
+      <!-- 11. dateAfter -->
       <div class="input-group">
-        <label>End Date</label>
+        <label>End Date (required|date|dateAfter:startDate)</label>
         <input type="date" name="endDate" data-rules="required|date|dateAfter:startDate"
           data-msg-dateafter="End date must be after the start date.">
       </div>
 
+      <!-- 12. phone -->
       <div class="input-group">
-        <label>Phone Number</label>
+        <label>Phone Number (required|phone)</label>
         <input type="tel" name="phone" data-rules="required|phone"
           data-msg-phone="Please provide a valid phone number format.">
       </div>
 
+      <!-- 13. fileType & fileSize -->
       <div class="input-group">
-        <label>Upload Profile Picture (Max 2MB)</label>
-        <input type="file" name="profilePic" data-rules="required|fileType:.png,.jpg,.jpeg|fileSize:2"
-          data-msg-filetype="Please upload a valid image (.png, .jpg)."
-          data-msg-filesize="Image is too large! Max 2MB.">
+        <label>Upload Profile Picture (fileType:.png,.jpg | fileSize:2)</label>
+        <input type="file" name="profilePic" data-rules="fileType:.png,.jpg,.jpeg|fileSize:2"
+          data-msg-filetype="Please upload a valid image format."
+          data-msg-filesize="Image is too large! Max size is 2MB.">
       </div>
 
+      <!-- 14. Custom Function (customCodeCheck) -->
       <div class="input-group">
-        <label>Promo / Access Code</label>
+        <label>Promo / Access Code (required|customCodeCheck)</label>
         <input type="text" name="accessCode" data-rules="required|customCodeCheck"
-          data-msg-customcodecheck="Invalid format! Please use a valid access code.">
+          data-msg-customcodecheck="Invalid format! Must start with 'PRO-'.">
+      </div>
+
+      <!-- 15. Credit Card (Luhn validation) -->
+      <div class="input-group">
+        <label>Credit Card Number (required|creditCard)</label>
+        <input type="text" name="cardNumber" data-rules="required|creditCard"
+          data-msg-creditcard="The credit card number you entered is invalid (fails Luhn check)."
+          placeholder="4012 8888 8888 1881">
       </div>
 
       <div class="input-group">
-        <label>Credit Card Number</label>
-        <input type="text" name="cardNumber" data-rules="required|creditCard"
-          data-msg-creditcard="The credit card number you entered is invalid." placeholder="1234 5678 9012 3456">
+        <label>User Role</label>
+        <select name="role" data-rules="required|oneOf:Admin,Editor,Subscriber"
+          data-msg-oneOf="Please select a valid role.">
+          <option value="">Select Role</option>
+          <option value="Admin">Admin</option>
+          <option value="Editor">Editor</option>
+          <option value="Subscriber">Subscriber</option>
+        </select>
       </div>
 
+      <div class="input-group">
+        <label>Appointment Date & Time</label>
+        <input type="datetime-local" name="appointment" data-rules="required|dateTime"
+          data-msg-datetime="Please choose a valid appointment time.">
+      </div>
+
+      <div class="input-group">
+        <label>Event Start (Date & Time)</label>
+        <input type="datetime-local" name="eventStart" data-rules="required|dateTime">
+      </div>
+
+      <div class="input-group">
+        <label>Event End (Date & Time)</label>
+        <input type="datetime-local" name="eventEnd" data-rules="required|dateTime|dateTimeAfter:eventStart"
+          data-msg-datetimeafter="Event end must be chronologically after the start time.">
+      </div>
+
+      <!-- Booking Date (Must be today or a future date) -->
+      <div class="input-group">
+        <label>Reservation Date</label>
+        <input type="date" name="reservationDate" data-rules="required|date|minDate"
+          data-msg-mindate="You cannot book a date in the past!">
+      </div>
+
+      <!-- Birthdate / Joining Date (Must be today or a past date) -->
+      <div class="input-group">
+        <label>Date of Birth</label>
+        <input type="date" name="dob" data-rules="required|date|maxDate"
+          data-msg-maxdate="Birth date cannot be in the future.">
+      </div>
+
+      <!-- Future Event DateTime -->
+      <div class="input-group">
+        <label>Event Start (Min Now)</label>
+        <input type="datetime-local" name="eventStart" data-rules="required|dateTime|minDateTime"
+          data-msg-mindatetime="Event cannot start in the past.">
+      </div>
+
+      <div class="input-group">
+        <label>Employee ID Code</label>
+        <input type="text" name="empId" data-rules="required|pattern:^EMP-\\d{4}$"
+          data-msg-pattern="Employee ID must follow the format EMP-XXXX (e.g., EMP-1234)." placeholder="EMP-1234">
+      </div>
+
+      <!-- 16. Checkbox checked -->
       <div class="input-group">
         <label>
           <input type="checkbox" name="terms" data-rules="required"
@@ -155,11 +238,15 @@
         </label>
       </div>
 
-      <button type="submit">Register</button>
+      <button type="submit">Test All Validations</button>
     </form>
   </div>
 
+
+  <!-- Load our bundled library -->
   <script src="../dist/validator.min.js"></script>
+
+  <!-- Register custom function dynamically -->
   <script>
     if (window.UniversalValidatorRules) {
       window.UniversalValidatorRules.register('customCodeCheck', (value) => {

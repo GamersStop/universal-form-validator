@@ -132,4 +132,43 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.creditCard('abc-123')).toBe('Please enter a valid credit card number.');
   });
 
+  test('oneOf rule validates allowed values', () => {
+    const validatorFn = rules.oneOf(['apple', 'banana', 'orange']);
+
+    expect(validatorFn('apple')).toBeNull();
+    expect(validatorFn('banana')).toBeNull();
+    expect(validatorFn('grape')).toBe('Please select a valid option.');
+  });
+
+  test('dateTime rule validates date and time strings', () => {
+    expect(rules.dateTime('2026-06-01T14:30')).toBeNull();
+    expect(rules.dateTime('2026-06-01 14:30:00')).toBeNull();
+    expect(rules.dateTime('invalid-datetime')).toBe('Please enter a valid date and time.');
+  });
+
+  test('dateTimeAfter rule validates end datetime comes after start datetime', () => {
+    const validatorFn = rules.dateTimeAfter('startDateTime');
+    const validData = { startDateTime: '2026-06-01T10:00' };
+    const invalidData = { startDateTime: '2026-06-01T14:00' };
+    expect(validatorFn('2026-06-01T12:00', validData)).toBeNull();
+    expect(validatorFn('2026-06-01T12:00', invalidData)).toBe('End date and time must be after the start date and time.');
+  });
+
+  test('minDate and maxDate rules validate against sysdate', () => {
+    const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const pastDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    expect(rules.minDate(futureDate)).toBeNull();
+    expect(rules.minDate(pastDate)).toBe('Date must be today or in the future.');
+
+    expect(rules.maxDate(pastDate)).toBeNull();
+    expect(rules.maxDate(futureDate)).toBe('Date must be today or in the past.');
+  });
+
+  test('pattern rule validates strings against regular expressions', () => {
+    const validatorFn = rules.pattern('^EMP-\\d{4}$');
+    expect(validatorFn('EMP-5678')).toBeNull();
+    expect(validatorFn('EMP-ABCD')).toBe('Please match the requested format.');
+  });
+
 });
