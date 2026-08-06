@@ -1,3 +1,11 @@
+/**
+ * Project Name: Universal Form Builder (Validator Engine)
+ * Author: Mayuresh Pandit
+ * Description: Jest unit test suite for the core UniversalValidator engine class. 
+ *              Verifies schema parsing, multi-rule sequential evaluations, fail-fast behavior, 
+ *              error message mappings, and parameterized factory constraints (minLength/maxLength).
+ */
+
 const { UniversalValidator } = require('../src/validator');
 
 describe('UniversalValidator Engine', () => {
@@ -10,6 +18,9 @@ describe('UniversalValidator Engine', () => {
 
   const validator = new UniversalValidator(schema);
 
+  /**
+   * Verifies successful validation when all schema constraints are satisfied.
+   */
   test('passes perfectly valid form data', () => {
     const data = { username: 'john_doe', email: 'john@example.com', age: '25' };
     const result = validator.validate(data);
@@ -18,6 +29,9 @@ describe('UniversalValidator Engine', () => {
     expect(Object.keys(result.errors).length).toBe(0);
   });
 
+  /**
+   * Verifies that invalid fields are accurately caught and mapped to their respective errors.
+   */
   test('catches invalid data and maps errors to fields', () => {
     const data = { username: '', email: 'not-an-email', age: 'twenty' };
     const result = validator.validate(data);
@@ -28,6 +42,9 @@ describe('UniversalValidator Engine', () => {
     expect(result.errors.age).toBe('Must be a whole number.');
   });
 
+  /**
+   * Verifies that validation short-circuits (fail-fast) upon encountering the first broken rule per field.
+   */
   test('fail-fast works: stops at the first broken rule', () => {
     const data = { username: 'john', email: '', age: '25' };
     const result = validator.validate(data);
@@ -36,6 +53,9 @@ describe('UniversalValidator Engine', () => {
     expect(result.errors.email).toBe('This field is required.');
   });
 
+  /**
+   * Verifies parameterized factory constraints like minLength and maxLength bounds.
+   */
   test('validates minLength and maxLength rules correctly', () => {
     const schema = {
       username: ['required', 'minLength:3', 'maxLength:6']

@@ -1,6 +1,18 @@
-const { UniversalValidator } = require('./validator');
-const { rules: builtInRules } = require('./rules');
+/**
+ * Project Name: Universal Form Builder (Validator Engine)
+ * Author: Mayuresh Pandit
+ * Description: Client-side DOM auto-binding and runtime event handling module. 
+ *              Injects validation CSS styles, manages field event listeners (blur, input, submit), 
+ *              and renders prototype-safe error messaging dynamically within forms.
+ */
 
+const { UniversalValidator } = require('./validator');
+const { rules: builtInRules, getRuleDefinition } = require('./rules');
+
+/**
+ * Injects core validation UI styles (error outlines, shake animations, and text formatting) 
+ * into the document head if not already present.
+ */
 const injectStyles = () => {
   if (document.getElementById('uv-styles')) return;
 
@@ -27,11 +39,19 @@ const injectStyles = () => {
   document.head.appendChild(style);
 };
 
+/**
+ * Validates a single DOM input element against its assigned rules, cleaning up previous 
+ * error states and rendering updated error messages safely using textContent.
+ * @param {HTMLElement} input - The input element to validate.
+ * @param {HTMLFormElement} form - The parent form container element.
+ * @returns {boolean} True if the field is valid, false otherwise.
+ */
 const validateField = (input, form) => {
   const fieldName = input.name;
-  if (!fieldName) return true;
+  if (!fieldName || !input.parentNode) return true;
 
-  const existingError = input.parentNode.querySelector('.uv-error-text');
+  // Clear existing error messages and invalid states specifically mapped to this field
+  const existingError = input.parentNode.querySelector(`.uv-error-text[data-for="${fieldName}"]`);
   if (existingError) existingError.remove();
   input.classList.remove('uv-input-error');
   input.removeAttribute('aria-invalid');
@@ -50,8 +70,8 @@ const validateField = (input, form) => {
     const lowerRuleName = ruleName.toLowerCase();
     const customMsg = input.getAttribute(`data-msg-${lowerRuleName}`);
 
-    // Look up rule dynamically (supports both built-in and dynamically registered custom rules)
-    const ruleDef = builtInRules[lowerRuleName] || builtInRules[ruleName];
+    // Look up rule dynamically using prototype-safe getter
+    const ruleDef = getRuleDefinition(builtInRules, ruleName);
 
     if (ruleDef) {
       const validatorFn = (typeof ruleDef === 'function' && ruleArg !== null)
@@ -61,7 +81,8 @@ const validateField = (input, form) => {
       return (val, allData) => {
         const error = typeof validatorFn === 'function' ? validatorFn(val, allData, input) : null;
         if (error) {
-          return customMsg || error; // Use custom error attribute message if present, otherwise default rule message
+          // Use custom error attribute message if present, otherwise default rule message
+          return customMsg || error;
         }
         return null;
       };
@@ -70,6 +91,7 @@ const validateField = (input, form) => {
     return ruleToken;
   });
 
+  // Aggregate current values from all form inputs for interdependent validations (e.g., match, dateAfter)
   const allInputs = form.querySelectorAll('[data-rules]');
   const data = {};
   allInputs.forEach(inp => {
@@ -92,8 +114,10 @@ const validateField = (input, form) => {
     input.classList.add('uv-input-error');
     input.setAttribute('aria-invalid', 'true');
 
+    // Create and insert error text element safely preventing XSS via textContent
     const span = document.createElement('span');
     span.className = 'uv-error-text';
+    span.setAttribute('data-for', fieldName);
     span.textContent = errorMsg;
     input.parentNode.insertBefore(span, input.nextSibling);
     return false;
@@ -101,13 +125,18 @@ const validateField = (input, form) => {
   return true;
 };
 
+/**
+ * Scans the document for forms marked with `data-validator`, ensures idempotency, 
+ * and attaches appropriate real-time validation triggers and form submission listeners.
+ */
 const initAutoBind = () => {
-  const forms = document.querySelectorAll('form[data-validator]');
+  const forms = document.querySelectorAll('form[data-validator]:not([data-uv-bound])');
   if (forms.length === 0) return;
 
   injectStyles();
 
   forms.forEach(form => {
+    form.setAttribute('data-uv-bound', 'true');
     const formTrigger = form.getAttribute('data-trigger') || 'submit';
     const inputs = form.querySelectorAll('[data-rules]');
 
@@ -145,6 +174,7 @@ const initAutoBind = () => {
   });
 };
 
+// Automatically bind forms when DOM is fully loaded in browser environments
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', initAutoBind);
 }

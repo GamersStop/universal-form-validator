@@ -1,7 +1,18 @@
+/**
+ * Project Name: Universal Form Builder (Validator Engine)
+ * Author: Mayuresh Pandit
+ * Description: Comprehensive Jest unit test suite for the core validation rules dictionary. 
+ *              Validates built-in constraints, factory parameter behaviors, datetime checks, 
+ *              regex patterns, and security hardening measures like prototype pollution blocks.
+ */
+
 const { rules } = require('../src/rules');
 
 describe('Validation Rules Dictionary', () => {
 
+  /**
+   * Verifies required rule behavior for empty states, whitespace strings, and valid text payloads.
+   */
   test('required rule catches empty strings', () => {
     expect(rules.required('')).toBe('This field is required.');
     expect(rules.required('   ')).toBe('This field is required.'); // catches spaces only
@@ -11,6 +22,9 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.required('hello')).toBeNull(); // null means it passed
   });
 
+  /**
+   * Verifies email validation constraints.
+   */
   test('email rule catches bad emails', () => {
     expect(rules.email('not-an-email')).toBe('Please enter a valid email address.');
   });
@@ -19,11 +33,17 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.email('test@example.com')).toBeNull();
   });
 
+  /**
+   * Verifies strict numeric integer restrictions.
+   */
   test('strictNumeric rule catches decimals and text', () => {
     expect(rules.strictNumeric('10.5')).toBe('Must be a whole number.');
     expect(rules.strictNumeric('abc')).toBe('Must be a whole number.');
   });
 
+  /**
+   * Verifies complex password policy enforcement.
+   */
   test('validates strict passwords correctly', () => {
     // Invalid passwords
     expect(rules.passwordStrict('weak')).not.toBeNull();
@@ -36,12 +56,18 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.passwordStrict('StrongP@ss1')).toBeNull();
   });
 
+  /**
+   * Verifies alphanumeric boundary restrictions.
+   */
   test('alphaNumeric rule blocks special characters', () => {
     expect(rules.alphaNumeric('Hello123')).toBeNull();
     expect(rules.alphaNumeric('Hello_123!')).not.toBeNull();
     expect(rules.alphaNumeric('special@char')).not.toBeNull();
   });
 
+  /**
+   * Verifies string length factor builders (min/max bounds).
+   */
   test('minLength rule enforces minimum boundaries', () => {
     const minCheck = rules.minLength(5);
     expect(minCheck('abc')).not.toBeNull();
@@ -54,6 +80,9 @@ describe('Validation Rules Dictionary', () => {
     expect(maxCheck('abc')).toBeNull();
   });
 
+  /**
+   * Verifies cross-field matching behavior (e.g., password confirmation fields).
+   */
   test('match rule compares two fields correctly', () => {
     const matchCheck = rules.match('password');
     const allData = { password: 'Secret123!' };
@@ -61,6 +90,9 @@ describe('Validation Rules Dictionary', () => {
     expect(matchCheck('Wrong123!', allData)).not.toBeNull();
   });
 
+  /**
+   * Verifies basic injection vector filtering.
+   */
   test('safeText rule blocks basic injection characters', () => {
     expect(rules.safeText('Hello World 123')).toBeNull();
     expect(rules.safeText('<script>alert("hi")</script>')).toBe('Invalid characters detected.');
@@ -68,6 +100,9 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.safeText('admin --')).toBe('Invalid characters detected.');
   });
 
+  /**
+   * Verifies protocol-restricted URL formatting constraints.
+   */
   test('urlValid rule catches invalid URLs and passes valid ones', () => {
     expect(rules.urlValid('https://example.com')).toBeNull();
     expect(rules.urlValid('http://localhost:3000')).toBeNull();
@@ -75,6 +110,9 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.urlValid('ftp://example.com')).toBe('Please enter a valid URL.');
   });
 
+  /**
+   * Verifies standard date and cross-field chronological comparisons.
+   */
   test('date rule validates date strings correctly', () => {
     expect(rules.date('2026-06-06')).toBeNull();
     expect(rules.date('not-a-date')).toBe('Please enter a valid date.');
@@ -96,6 +134,9 @@ describe('Validation Rules Dictionary', () => {
     expect(checkAfter('2025-01-01', allData)).not.toBeNull();
   });
 
+  /**
+   * Verifies standard phone number formatting constraints.
+   */
   test('phone rule validates phone numbers correctly', () => {
     expect(rules.phone('123-456-7890')).toBeNull();
     expect(rules.phone('(123) 456-7890')).toBeNull();
@@ -103,12 +144,18 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.phone('abc-def-ghij')).toBe('Please enter a valid phone number.');
   });
 
+  /**
+   * Verifies alphabetic-only character constraints.
+   */
   test('alphaLetters rule blocks numbers and special characters', () => {
     expect(rules.alphaLetters('John Doe')).toBeNull();
     expect(rules.alphaLetters('John123')).toBe('Must contain letters only.');
     expect(rules.alphaLetters('John!')).toBe('Must contain letters only.');
   });
 
+  /**
+   * Verifies file type extension and size limit boundary validations.
+   */
   test('fileType rule validates extensions correctly', () => {
     const checkType = rules.fileType('.png,.jpg');
     const validFiles = [{ name: 'image.png', type: 'image/png' }];
@@ -126,12 +173,18 @@ describe('Validation Rules Dictionary', () => {
     expect(checkSize(invalidFiles)).toBe('File must be smaller than 2MB.');
   });
 
+  /**
+   * Verifies credit card number verification via the Luhn algorithm.
+   */
   test('creditCard rule validates via Luhn algorithm', () => {
     expect(rules.creditCard('4012888888881881')).toBeNull();
     expect(rules.creditCard('4012888888881882')).toBe('Please enter a valid credit card number.');
     expect(rules.creditCard('abc-123')).toBe('Please enter a valid credit card number.');
   });
 
+  /**
+   * Verifies whitelisted option selection choices (oneOf).
+   */
   test('oneOf rule validates allowed values', () => {
     const validatorFn = rules.oneOf(['apple', 'banana', 'orange']);
 
@@ -140,6 +193,9 @@ describe('Validation Rules Dictionary', () => {
     expect(validatorFn('grape')).toBe('Please select a valid option.');
   });
 
+  /**
+   * Verifies datetime formatting and sequential date-time boundaries.
+   */
   test('dateTime rule validates date and time strings', () => {
     expect(rules.dateTime('2026-06-01T14:30')).toBeNull();
     expect(rules.dateTime('2026-06-01 14:30:00')).toBeNull();
@@ -154,6 +210,9 @@ describe('Validation Rules Dictionary', () => {
     expect(validatorFn('2026-06-01T12:00', invalidData)).toBe('End date and time must be after the start date and time.');
   });
 
+  /**
+   * Verifies system date (sysdate) min/max date-time comparisons and malformed input handling.
+   */
   test('minDate and maxDate rules validate against sysdate', () => {
     const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
     const pastDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
@@ -165,10 +224,27 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.maxDate(futureDate)).toBe('Date must be today or in the past.');
   });
 
+  test('minDate and maxDate handle malformed dates gracefully', () => {
+    expect(rules.minDate('not-a-date')).toBe('Please enter a valid date.');
+    expect(rules.maxDate('invalid')).toBe('Please enter a valid date.');
+  });
+
+  /**
+   * Verifies custom regex pattern matching escape hatch.
+   */
   test('pattern rule validates strings against regular expressions', () => {
     const validatorFn = rules.pattern('^EMP-\\d{4}$');
     expect(validatorFn('EMP-5678')).toBeNull();
     expect(validatorFn('EMP-ABCD')).toBe('Please match the requested format.');
+  });
+
+  /**
+   * Verifies security hardening against prototype pollution attempts during rule registration.
+   */
+  test('register blocks prototype pollution attempts', () => {
+    expect(() => rules.register('__proto__', () => { })).toThrow('SecurityError');
+    expect(() => rules.register('constructor', () => { })).toThrow('SecurityError');
+    expect(() => rules.register('prototype', () => { })).toThrow('SecurityError');
   });
 
 });

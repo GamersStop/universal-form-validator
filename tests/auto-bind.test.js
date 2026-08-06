@@ -1,10 +1,16 @@
 /**
+ * Project Name: Universal Form Builder (Validator Engine)
+ * Author: Mayuresh Pandit
+ * Description: Jest unit test suite for client-side auto-binding and DOM event listeners. 
+ *              Verifies style injection, error element creation, form prevention, and custom attribute handling.
+ * 
  * @jest-environment jsdom
  */
+
 const { initAutoBind } = require('../src/auto-bind');
 
 describe('Zero-JS Auto-Binder', () => {
-  
+
   beforeEach(() => {
     document.head.innerHTML = '';
     document.body.innerHTML = `
@@ -15,6 +21,10 @@ describe('Zero-JS Auto-Binder', () => {
     `;
   });
 
+  /**
+   * Verifies that the auto-binder dynamically injects required validation styling 
+   * into the document head on initialization.
+   */
   test('injects CSS styles into the document head', () => {
     initAutoBind();
     const styleTag = document.getElementById('uv-styles');
@@ -22,9 +32,13 @@ describe('Zero-JS Auto-Binder', () => {
     expect(styleTag.textContent).toContain('.uv-input-error');
   });
 
+  /**
+   * Verifies that form submission is prevented, error classes/attributes are applied, 
+   * and custom error messages are safely rendered when invalid data is submitted.
+   */
   test('prevents submission and injects error UI on invalid data', () => {
     initAutoBind();
-    
+
     const form = document.getElementById('test-form');
     const input = form.elements['user_email'];
 
@@ -38,7 +52,8 @@ describe('Zero-JS Auto-Binder', () => {
 
     const errorText = document.querySelector('.uv-error-text');
     expect(errorText).not.toBeNull();
-    expect(errorText.innerHTML).toBe('We need this!'); 
+    // Verify using textContent or matching value rendered safely via textContent
+    expect(errorText.textContent).toBe('We need this!');
   });
 
 });

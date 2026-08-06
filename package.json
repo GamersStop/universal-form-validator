@@ -2,11 +2,12 @@
   "name": "universal-form-validator",
   "version": "1.0.0",
   "description": "A framework-agnostic, zero-dependency form validation engine.",
-  "main": "dist/validator.cjs.js",
-  "module": "dist/validator.esm.js",
+  "main": "src/index.js",
+  "module": "src/index.js",
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "build": "echo \"No build step required\""
   },
   "keywords": [
     "form",

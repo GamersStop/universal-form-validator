@@ -1,3 +1,10 @@
+<!--
+  Project Name: Universal Form Builder (Validator Engine)
+  Author: Mayuresh Pandit
+  Description: Comprehensive client-side HTML test harness. Demonstrates zero-configuration 
+               auto-binding (`data-validator`), declarative schema attributes (`data-rules`), 
+               custom inline error messages (`data-msg-*`), and dynamic rule registration.
+-->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -32,7 +39,8 @@
       font-size: 0.9em;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid #ccc;
@@ -219,7 +227,7 @@
       <!-- Future Event DateTime -->
       <div class="input-group">
         <label>Event Start (Min Now)</label>
-        <input type="datetime-local" name="eventStart" data-rules="required|dateTime|minDateTime"
+        <input type="datetime-local" name="eventStartMin" data-rules="required|dateTime|minDateTime"
           data-msg-mindatetime="Event cannot start in the past.">
       </div>
 
