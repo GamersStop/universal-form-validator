@@ -1,9 +1,10 @@
-const { rules } = require('./rules');
 const { UniversalValidator } = require('./validator');
 const { initAutoBind } = require('./auto-bind');
+const { rules } = require('./rules');
 
-module.exports = {
-  rules,
-  UniversalValidator,
-  initAutoBind
-};
+if (typeof window !== 'undefined') {
+  window.UniversalValidator = UniversalValidator;
+  window.UniversalValidatorRules = rules;
+}
+
+module.exports = { UniversalValidator, initAutoBind, rules };

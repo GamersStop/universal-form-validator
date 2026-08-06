@@ -47,17 +47,23 @@ const validateField = (input, form) => {
       ruleArg = parts[1];
     }
 
-    const customMsg = input.getAttribute(`data-msg-${ruleName.toLowerCase()}`);
+    const lowerRuleName = ruleName.toLowerCase();
+    const customMsg = input.getAttribute(`data-msg-${lowerRuleName}`);
 
-    if (customMsg && builtInRules[ruleName]) {
-      const ruleDef = builtInRules[ruleName];
+    // Look up rule dynamically (supports both built-in and dynamically registered custom rules)
+    const ruleDef = builtInRules[lowerRuleName] || builtInRules[ruleName];
+
+    if (ruleDef) {
       const validatorFn = (typeof ruleDef === 'function' && ruleArg !== null)
         ? ruleDef(ruleArg)
         : ruleDef;
 
       return (val, allData) => {
-        const error = typeof validatorFn === 'function' ? validatorFn(val, allData) : null;
-        return error ? customMsg : null;
+        const error = typeof validatorFn === 'function' ? validatorFn(val, allData, input) : null;
+        if (error) {
+          return customMsg || error; // Use custom error attribute message if present, otherwise default rule message
+        }
+        return null;
       };
     }
 
@@ -68,7 +74,13 @@ const validateField = (input, form) => {
   const data = {};
   allInputs.forEach(inp => {
     if (inp.name) {
-      data[inp.name] = inp.type === 'checkbox' ? inp.checked : inp.value;
+      if (inp.type === 'checkbox') {
+        data[inp.name] = inp.checked;
+      } else if (inp.type === 'file') {
+        data[inp.name] = inp.files;
+      } else {
+        data[inp.name] = inp.value;
+      }
     }
   });
 
@@ -105,7 +117,8 @@ const initAutoBind = () => {
       if (trigger === 'blur') {
         input.addEventListener('blur', () => validateField(input, form));
       } else if (trigger === 'input' || trigger === 'keypress') {
-        input.addEventListener('input', () => validateField(input, form));
+        const eventType = input.type === 'file' ? 'change' : 'input';
+        input.addEventListener(eventType, () => validateField(input, form));
       }
     });
 

@@ -42,16 +42,19 @@ const rules = {
     const targetValue = allData ? allData[targetField] : undefined;
     return value === targetValue ? null : 'Fields do not match.';
   },
+
   alphaNumeric: (value) => {
     if (!value) return 'Only letters and numbers are allowed.';
     const alphaNumericRegex = /^[a-zA-Z0-9]+$/;
     return alphaNumericRegex.test(value) ? null : 'Only letters and numbers are allowed.';
   },
+
   safeText: (value) => {
     if (!value) return null;
     const unsafeRegex = /[<>'";]|--/;
     return unsafeRegex.test(value) ? 'Invalid characters detected.' : null;
   },
+
   urlValid: (value) => {
     if (!value) return 'Please enter a valid URL.';
     try {
@@ -61,6 +64,7 @@ const rules = {
       return 'Please enter a valid URL.';
     }
   },
+
   date: (value) => {
     if (!value) return 'Please enter a valid date.';
     const timestamp = Date.parse(value);
@@ -88,17 +92,85 @@ const rules = {
     }
     return currentValue > targetValue ? null : `Date must be after ${targetField}.`;
   },
+
   checked: (value, allData, element) => {
     if (element && typeof element.checked === 'boolean') {
       return element.checked ? null : 'You must accept the terms to continue.';
     }
     return value ? null : 'You must accept the terms to continue.';
   },
+
   phone: (value) => {
     if (!value) return 'Please enter a valid phone number.';
     const phoneRegex = /^[\+]?[(]?\d{3}[)]?[-\s\.]?\d{3}[-\s\.]?\d{4,6}$/;
     return phoneRegex.test(value) ? null : 'Please enter a valid phone number.';
   },
+
+  alphaLetters: (value) => {
+    if (!value) return null;
+    const alphaRegex = /^[A-Za-z\s]+$/;
+    return alphaRegex.test(value) ? null : 'Must contain letters only.';
+  },
+
+  fileType: (allowedTypes) => (files) => {
+    if (!files || files.length === 0) return null;
+
+    const typesArray = allowedTypes.split(',').map(t => t.trim().toLowerCase());
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const extension = '.' + file.name.split('.').pop().toLowerCase();
+      const mimeType = file.type.toLowerCase();
+
+      const isValid = typesArray.includes(extension) || typesArray.includes(mimeType);
+      if (!isValid) return `File type not allowed. Allowed types: ${allowedTypes}`;
+    }
+    return null;
+  },
+
+  fileSize: (maxMB) => (files) => {
+    if (!files || files.length === 0) return null;
+
+    const maxBytes = parseFloat(maxMB) * 1024 * 1024;
+
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > maxBytes) {
+        return `File must be smaller than ${maxMB}MB.`;
+      }
+    }
+    return null;
+  },
+
+  creditCard: (value) => {
+    if (!value) return 'Please enter a valid credit card number.';
+    const sanitized = String(value).replace(/[\s-]/g, '');
+    if (!/^\d{13,19}$/.test(sanitized)) {
+      return 'Please enter a valid credit card number.';
+    }
+    let sum = 0;
+    let shouldDouble = false;
+    for (let i = sanitized.length - 1; i >= 0; i--) {
+      let digit = parseInt(sanitized.charAt(i), 10);
+
+      if (shouldDouble) {
+        digit *= 2;
+        if (digit > 9) {
+          digit -= 9;
+        }
+      }
+
+      sum += digit;
+      shouldDouble = !shouldDouble;
+    }
+
+    return (sum % 10 === 0) ? null : 'Please enter a valid credit card number.';
+  },
+
+  register(ruleName, validatorFn) {
+    if (typeof ruleName === 'string' && typeof validatorFn === 'function') {
+      this[ruleName.toLowerCase()] = validatorFn;
+    }
+  }
 };
 
 module.exports = { rules };

@@ -102,4 +102,34 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.phone('+19876543210')).toBeNull();
     expect(rules.phone('abc-def-ghij')).toBe('Please enter a valid phone number.');
   });
+
+  test('alphaLetters rule blocks numbers and special characters', () => {
+    expect(rules.alphaLetters('John Doe')).toBeNull();
+    expect(rules.alphaLetters('John123')).toBe('Must contain letters only.');
+    expect(rules.alphaLetters('John!')).toBe('Must contain letters only.');
+  });
+
+  test('fileType rule validates extensions correctly', () => {
+    const checkType = rules.fileType('.png,.jpg');
+    const validFiles = [{ name: 'image.png', type: 'image/png' }];
+    const invalidFiles = [{ name: 'document.pdf', type: 'application/pdf' }];
+
+    expect(checkType(validFiles)).toBeNull();
+    expect(checkType(invalidFiles)).toBe('File type not allowed. Allowed types: .png,.jpg');
+  });
+
+  test('fileSize rule validates size limits correctly', () => {
+    const checkSize = rules.fileSize('2');
+    const validFiles = [{ name: 'small.jpg', size: 1024 * 1024 * 1.5 }];
+    const invalidFiles = [{ name: 'large.jpg', size: 1024 * 1024 * 3 }];
+    expect(checkSize(validFiles)).toBeNull();
+    expect(checkSize(invalidFiles)).toBe('File must be smaller than 2MB.');
+  });
+
+  test('creditCard rule validates via Luhn algorithm', () => {
+    expect(rules.creditCard('4012888888881881')).toBeNull();
+    expect(rules.creditCard('4012888888881882')).toBe('Please enter a valid credit card number.');
+    expect(rules.creditCard('abc-123')).toBe('Please enter a valid credit card number.');
+  });
+
 });
