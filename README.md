@@ -31,7 +31,7 @@ npm install universal-form-validator
 Or include it via script tag in your HTML:
 
 ```html
-<script src="node_modules/universal-form-validator/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/universal-form-validator@1.0.0/dist/validator.min.js"></script>
 ```
 
 ---
