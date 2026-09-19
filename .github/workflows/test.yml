@@ -22,13 +22,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' 
+          node-version: '24' 
           cache: 'npm'
 
-      # Step C: Install dependencies (Jest)
+      # Step C: Install dependencies
       - name: Install Dependencies
         run: npm ci
 
-      # Step D: Run the tests!
+      # Step D: Type check
+      - name: Verify TypeScript Types
+        run: npm run typecheck
+
+      # Step E: Build distribution bundles
+      - name: Build Distribution Bundles
+        run: npm run build
+
+      # Step F: Run the tests!
       - name: Run Jest Tests
         run: npm test

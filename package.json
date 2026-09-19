@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/GamersStop/universal-form-validator#readme",
   "scripts": {
+    "pretest": "npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit",

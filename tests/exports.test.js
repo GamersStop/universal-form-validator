@@ -12,6 +12,16 @@ describe('Package Exports & Distribution Integrity', () => {
 
   const packageJson = require('../package.json');
 
+  beforeAll(() => {
+    const distFiles = ['index.cjs', 'index.mjs', 'validator.min.js', 'index.d.ts'];
+    const distDir = path.join(__dirname, '..', 'dist');
+    const isMissing = distFiles.some(file => !fs.existsSync(path.join(distDir, file)));
+    if (isMissing) {
+      const { execSync } = require('child_process');
+      execSync('node build.js', { cwd: path.join(__dirname, '..'), stdio: 'pipe' });
+    }
+  });
+
   test('package.json specifies compliant modern exports mapping', () => {
     expect(packageJson.main).toBe('dist/index.cjs');
     expect(packageJson.module).toBe('dist/index.mjs');
