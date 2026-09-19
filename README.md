@@ -53,7 +53,7 @@ Include the minified browser bundle directly via CDN without build tooling:
 
 ---
 
-## 💻 Quick Start
+## 💻 Quick Start 
 
 ### 1. Zero-JS Mode 2.0 (Declarative HTML)
 
