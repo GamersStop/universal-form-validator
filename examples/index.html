@@ -1,266 +1,441 @@
-<!--
-  Project Name: Universal Form Builder (Validator Engine)
-  Author: Mayuresh Pandit
-  Description: Comprehensive client-side HTML test harness. Demonstrates zero-configuration 
-               auto-binding (`data-validator`), declarative schema attributes (`data-rules`), 
-               custom inline error messages (`data-msg-*`), and dynamic rule registration.
--->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zero-JS Validator Comprehensive Test</title>
+  <title>Universal Form Validator v1.1.0 - Interactive Demo & Feature Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --input-bg: #0f172a;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: system-ui, sans-serif;
-      background: #f4f4f5;
-      padding: 2rem;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2.5rem 1rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 840px) {
+      .grid {
+        grid-template-columns: 3fr 2fr;
+      }
     }
 
     .card {
-      max-width: 450px;
-      margin: 0 auto;
-      background: white;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
-    .input-group {
+    .card h2 {
+      font-size: 1.25rem;
       margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
     }
 
     label {
       display: block;
       margin-bottom: 0.5rem;
-      font-weight: bold;
-      font-size: 0.9em;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #e2e8f0;
     }
 
     input,
     select {
       width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
+      padding: 0.75rem 1rem;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    input[type="checkbox"] {
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group input {
       width: auto;
-      margin-right: 0.5rem;
     }
 
-    button {
+    .custom-error-box {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      display: none;
+    }
+
+    .custom-error-box:not(:empty) {
+      display: block;
+    }
+
+    button[type="submit"] {
       width: 100%;
-      padding: 0.75rem;
-      background: #2563eb;
+      padding: 0.875rem;
+      background: var(--primary);
       color: white;
       border: none;
-      border-radius: 4px;
-      font-weight: bold;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
       cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 1rem;
     }
 
-    button:hover {
-      background: #1d4ed8;
+    button[type="submit"]:hover {
+      background: var(--primary-hover);
+    }
+
+    .log-panel {
+      font-family: monospace;
+      font-size: 0.82rem;
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      height: 350px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin-bottom: 0.4rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px dashed #1e293b;
+    }
+
+    .log-entry.success {
+      color: var(--success);
+    }
+
+    .log-entry.error {
+      color: var(--error);
+    }
+
+    .log-entry.info {
+      color: #38bdf8;
+    }
+
+    .locale-switcher {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .locale-switcher select {
+      width: auto;
+      padding: 0.4rem 0.8rem;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="card">
-    <h2>Comprehensive Validator Test</h2>
+  <div class="container">
+    <header>
+      <h1>Universal Form Validator</h1>
+      <p>Interactive Showcase: Zero-JS 2.0, Async Remote, Conditional Logic & Multi-Locale</p>
+    </header>
 
-    <!-- The data-validator attribute triggers our script -->
-    <form data-validator action="/success-page">
+    <div class="grid">
+      <!-- Main Form -->
+      <div class="card">
+        <h2>📝 Interactive Enterprise Form</h2>
 
-      <!-- 1. required, minLength, maxLength -->
-      <div class="input-group">
-        <label>Username (required, min: 3, max: 10)</label>
-        <input type="text" name="username" data-rules="required|minLength:3|maxLength:10" data-trigger="input">
+        <!-- Network Environment Mode Indicator -->
+        <div id="networkModeBadge"
+          style="margin-bottom: 1rem; font-size: 0.82rem; padding: 0.5rem 0.75rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8;">
+          <span id="networkModeDot"
+            style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#38bdf8;"></span>
+          <span id="networkModeText">Detecting network environment...</span>
+        </div>
+
+        <!-- Language Selector -->
+        <div class="locale-switcher">
+          <label for="localeSelect">Active Locale:</label>
+          <select id="localeSelect">
+            <option value="en" selected>English (en)</option>
+            <option value="es">Español (es)</option>
+            <option value="fr">Français (fr)</option>
+            <option value="de">Deutsch (de)</option>
+            <option value="hi">हिन्दी (hi)</option>
+            <option value="zh">中文 (zh)</option>
+          </select>
+        </div>
+
+        <form data-validator data-ajax="true" data-locale="en" id="demoForm">
+          <!-- 1. Username with async remote check and debouncing -->
+          <div class="form-group">
+            <label for="username">Username (Type ≥ 3 chars: "admin" = taken; "john" = available)</label>
+            <input type="text" id="username" name="username" data-label="Username"
+              data-rules="required|minLength:3|remote:/api/check-username" data-debounce="300"
+              placeholder="e.g. john_doe">
+            <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+              ⚡ Fail-fast logic: <code>minLength:3</code> evaluates locally first. Once ≥ 3 chars, <code>remote</code>
+              fires across network with 300ms debounce.
+            </small>
+          </div>
+
+          <!-- 2. Email Address -->
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" data-label="Work Email" data-rules="required|email"
+              placeholder="user@example.com">
+          </div>
+
+          <!-- 3. Account Type (Interdependent trigger) -->
+          <div class="form-group">
+            <label for="accountType">Account Type</label>
+            <select id="accountType" name="accountType">
+              <option value="personal">Personal Account</option>
+              <option value="business">Business Account</option>
+            </select>
+          </div>
+
+          <!-- 4. Conditional Tax ID: requiredIf accountType == 'business' -->
+          <div class="form-group">
+            <label for="taxId">Corporate Tax ID (Mandatory for Business)</label>
+            <input type="text" id="taxId" name="taxId" data-label="Tax ID"
+              data-rules="requiredIf:accountType,business|dependsOn:accountType" placeholder="TAX-12345">
+          </div>
+
+          <!-- 5. Numeric Age with Range -->
+          <div class="form-group">
+            <label for="age">Age (Numeric: 18–99)</label>
+            <input type="text" id="age" name="age" data-label="Age" data-rules="required|numeric|between:18,99"
+              placeholder="25">
+          </div>
+
+          <!-- 6. Password and confirmation (sameAs) -->
+          <div class="form-group">
+            <label for="password">Password (Strict)</label>
+            <input type="password" id="password" name="password" data-label="Password"
+              data-rules="required|passwordStrict" data-error-target="#pwd-error-container" placeholder="••••••••">
+            <!-- Custom error placement container -->
+            <div id="pwd-error-container" class="custom-error-box"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password (sameAs)</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" data-label="Password Confirmation"
+              data-rules="required|sameAs:password" placeholder="••••••••">
+          </div>
+
+          <!-- 7. Terms and Conditions -->
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="terms" name="terms" data-rules="checked">
+            <label for="terms" style="margin-bottom: 0;">I accept the Terms of Service</label>
+          </div>
+
+          <button type="submit">Submit (Intercepted via data-ajax)</button>
+        </form>
       </div>
 
-      <!-- 2. email -->
-      <div class="input-group">
-        <label>Email Address (required|email)</label>
-        <input type="text" name="email" data-rules="required|email"
-          data-msg-required="We need an email to send your receipt." data-trigger="blur">
+      <!-- Live Event Logger Panel -->
+      <div class="card">
+        <h2>📡 Live Lifecycle Event Log</h2>
+        <div class="log-panel" id="logPanel">
+          <div class="log-entry info">[Init] Zero-JS Engine ready. Watching form events...</div>
+        </div>
       </div>
-
-      <!-- 3. alphaLetters -->
-      <div class="input-group">
-        <label>First Name (required|alphaLetters)</label>
-        <input type="text" name="firstName" data-rules="required|alphaLetters"
-          data-msg-alphaletters="Names can only contain letters.">
-      </div>
-
-      <!-- 4. alphaNumeric -->
-      <div class="input-group">
-        <label>User ID Code (alphaNumeric)</label>
-        <input type="text" name="userId" data-rules="alphaNumeric"
-          data-msg-alphanumeric="Only letters and numbers are permitted here.">
-      </div>
-
-      <!-- 5. strictNumeric -->
-      <div class="input-group">
-        <label>Age (strictNumeric)</label>
-        <input type="text" name="age" data-rules="strictNumeric"
-          data-msg-strictnumeric="Please type a whole number, not words.">
-      </div>
-
-      <!-- 6. safeText -->
-      <div class="input-group">
-        <label>Bio / Comments (safeText|maxLength:50)</label>
-        <input type="text" name="bio" data-rules="safeText|maxLength:50"
-          data-msg-safetext="No malicious characters allowed!">
-      </div>
-
-      <!-- 7. urlValid -->
-      <div class="input-group">
-        <label>Personal Website (urlValid)</label>
-        <input type="text" name="website" data-rules="urlValid"
-          data-msg-urlvalid="Please provide a valid URL starting with http:// or https://">
-      </div>
-
-      <!-- 8. passwordStrict -->
-      <div class="input-group">
-        <label>Password (required|passwordStrict)</label>
-        <input type="password" name="password" data-rules="required|passwordStrict">
-      </div>
-
-      <!-- 9. match -->
-      <div class="input-group">
-        <label>Confirm Password (required|match:password)</label>
-        <input type="password" name="confirmPassword" data-msg-match="Password did not match"
-          data-rules="required|match:password">
-      </div>
-
-      <!-- 10. date -->
-      <div class="input-group">
-        <label>Start Date (required|date)</label>
-        <input type="date" name="startDate" data-rules="required|date">
-      </div>
-
-      <!-- 11. dateAfter -->
-      <div class="input-group">
-        <label>End Date (required|date|dateAfter:startDate)</label>
-        <input type="date" name="endDate" data-rules="required|date|dateAfter:startDate"
-          data-msg-dateafter="End date must be after the start date.">
-      </div>
-
-      <!-- 12. phone -->
-      <div class="input-group">
-        <label>Phone Number (required|phone)</label>
-        <input type="tel" name="phone" data-rules="required|phone"
-          data-msg-phone="Please provide a valid phone number format.">
-      </div>
-
-      <!-- 13. fileType & fileSize -->
-      <div class="input-group">
-        <label>Upload Profile Picture (fileType:.png,.jpg | fileSize:2)</label>
-        <input type="file" name="profilePic" data-rules="fileType:.png,.jpg,.jpeg|fileSize:2"
-          data-msg-filetype="Please upload a valid image format."
-          data-msg-filesize="Image is too large! Max size is 2MB.">
-      </div>
-
-      <!-- 14. Custom Function (customCodeCheck) -->
-      <div class="input-group">
-        <label>Promo / Access Code (required|customCodeCheck)</label>
-        <input type="text" name="accessCode" data-rules="required|customCodeCheck"
-          data-msg-customcodecheck="Invalid format! Must start with 'PRO-'.">
-      </div>
-
-      <!-- 15. Credit Card (Luhn validation) -->
-      <div class="input-group">
-        <label>Credit Card Number (required|creditCard)</label>
-        <input type="text" name="cardNumber" data-rules="required|creditCard"
-          data-msg-creditcard="The credit card number you entered is invalid (fails Luhn check)."
-          placeholder="4012 8888 8888 1881">
-      </div>
-
-      <div class="input-group">
-        <label>User Role</label>
-        <select name="role" data-rules="required|oneOf:Admin,Editor,Subscriber"
-          data-msg-oneOf="Please select a valid role.">
-          <option value="">Select Role</option>
-          <option value="Admin">Admin</option>
-          <option value="Editor">Editor</option>
-          <option value="Subscriber">Subscriber</option>
-        </select>
-      </div>
-
-      <div class="input-group">
-        <label>Appointment Date & Time</label>
-        <input type="datetime-local" name="appointment" data-rules="required|dateTime"
-          data-msg-datetime="Please choose a valid appointment time.">
-      </div>
-
-      <div class="input-group">
-        <label>Event Start (Date & Time)</label>
-        <input type="datetime-local" name="eventStart" data-rules="required|dateTime">
-      </div>
-
-      <div class="input-group">
-        <label>Event End (Date & Time)</label>
-        <input type="datetime-local" name="eventEnd" data-rules="required|dateTime|dateTimeAfter:eventStart"
-          data-msg-datetimeafter="Event end must be chronologically after the start time.">
-      </div>
-
-      <!-- Booking Date (Must be today or a future date) -->
-      <div class="input-group">
-        <label>Reservation Date</label>
-        <input type="date" name="reservationDate" data-rules="required|date|minDate"
-          data-msg-mindate="You cannot book a date in the past!">
-      </div>
-
-      <!-- Birthdate / Joining Date (Must be today or a past date) -->
-      <div class="input-group">
-        <label>Date of Birth</label>
-        <input type="date" name="dob" data-rules="required|date|maxDate"
-          data-msg-maxdate="Birth date cannot be in the future.">
-      </div>
-
-      <!-- Future Event DateTime -->
-      <div class="input-group">
-        <label>Event Start (Min Now)</label>
-        <input type="datetime-local" name="eventStartMin" data-rules="required|dateTime|minDateTime"
-          data-msg-mindatetime="Event cannot start in the past.">
-      </div>
-
-      <div class="input-group">
-        <label>Employee ID Code</label>
-        <input type="text" name="empId" data-rules="required|pattern:^EMP-\\d{4}$"
-          data-msg-pattern="Employee ID must follow the format EMP-XXXX (e.g., EMP-1234)." placeholder="EMP-1234">
-      </div>
-
-      <!-- 16. Checkbox checked -->
-      <div class="input-group">
-        <label>
-          <input type="checkbox" name="terms" data-rules="required"
-            data-msg-required="You must agree to the terms and conditions.">
-          I accept the terms and conditions
-        </label>
-      </div>
-
-      <button type="submit">Test All Validations</button>
-    </form>
+    </div>
   </div>
 
-
-  <!-- Load our bundled library -->
+  <!-- Load universal-form-validator bundle -->
   <script src="../dist/validator.min.js"></script>
 
-  <!-- Register custom function dynamically -->
   <script>
-    if (window.UniversalValidatorRules) {
-      window.UniversalValidatorRules.register('customCodeCheck', (value) => {
-        return value && value.startsWith('PRO-') ? null : 'Code must start with "PRO-".';
-      });
+    // 1. Environment Detection & Network Handling
+    const isHttp = window.location.protocol.startsWith('http');
+    const modeBadge = document.getElementById('networkModeBadge');
+    const modeDot = document.getElementById('networkModeDot');
+    const modeText = document.getElementById('networkModeText');
+
+    if (isHttp) {
+      modeDot.style.background = '#22c55e';
+      modeBadge.style.color = '#4ade80';
+      modeBadge.style.borderColor = 'rgba(34, 197, 94, 0.4)';
+      modeBadge.style.background = 'rgba(34, 197, 94, 0.1)';
+      modeText.innerHTML = '🟢 <strong>Real HTTP Server Active:</strong> Requests to <code>/api/check-username</code> appear in your DevTools Network tab.';
+    } else {
+      modeDot.style.background = '#eab308';
+      modeBadge.style.color = '#fde047';
+      modeBadge.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+      modeBadge.style.background = 'rgba(234, 179, 8, 0.1)';
+      modeText.innerHTML = '🟡 <strong>Local file:// Mode:</strong> Running without HTTP server (mocked in JS). Run <code>npm run example:serve</code> to inspect real requests in DevTools!';
+
+      // In file:// mode, intercept fetch in-memory to prevent CORS/file-scheme errors
+      const originalFetch = window.fetch;
+      window.fetch = async (url, options) => {
+        if (typeof url === 'string' && url.includes('/api/check-username')) {
+          let value = '';
+          if (options && options.body) {
+            try {
+              const body = JSON.parse(options.body);
+              value = body.value;
+            } catch (e) { }
+          } else {
+            try {
+              const parsed = new URL(url, window.location.origin);
+              value = parsed.searchParams.get('value') || '';
+            } catch (e) {
+              const m = url.match(/[?&]value=([^&]+)/);
+              value = m ? decodeURIComponent(m[1]) : '';
+            }
+          }
+
+          // Simulate network delay
+          await new Promise(res => setTimeout(res, 200));
+
+          // Mock: "admin" or "root" is already taken
+          if (value.toLowerCase() === 'admin' || value.toLowerCase() === 'root') {
+            const currentLocale = form.getAttribute('data-locale') || 'en';
+            const takenMessages = {
+              en: 'This username is already taken.',
+              es: 'Este nombre de usuario ya está en uso.',
+              fr: "Ce nom d'utilisateur est déjà pris.",
+              de: 'Dieser Benutzername ist bereits vergeben.',
+              hi: 'यह उपयोगकर्ता नाम पहले से लिया गया है।',
+              zh: '该用户名已被占用。'
+            };
+            const message = takenMessages[currentLocale] || takenMessages.en;
+            return {
+              ok: false,
+              status: 400,
+              json: async () => ({ isValid: false, message })
+            };
+          }
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({ isValid: true })
+          };
+        }
+        return originalFetch(url, options);
+      };
     }
+
+    // 2. Setup event logging
+    const logPanel = document.getElementById('logPanel');
+    const addLog = (type, message) => {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logPanel.appendChild(entry);
+      logPanel.scrollTop = logPanel.scrollHeight;
+    };
+
+    const form = document.getElementById('demoForm');
+
+    form.addEventListener('uv:validate', () => {
+      addLog('info', 'Event: uv:validate fired. Beginning evaluation.');
+    });
+
+    form.addEventListener('uv:field:validated', (e) => {
+      const { field, isValid, error } = e.detail;
+      if (isValid) {
+        addLog('success', `✓ Field "${field}" passed.`);
+      } else {
+        addLog('error', `✗ Field "${field}" failed: "${error}"`);
+      }
+    });
+
+    form.addEventListener('uv:success', () => {
+      addLog('success', '🎉 Event: uv:success fired! All fields are 100% valid. Native submit prevented (data-ajax="true").');
+      alert('Form submitted successfully via AJAX!');
+    });
+
+    form.addEventListener('uv:fail', (e) => {
+      addLog('error', `⛔ Event: uv:fail fired! ${Object.keys(e.detail.errors).length} error(s) detected.`);
+    });
+
+    // 3. Dynamic locale switching
+    const localeSelect = document.getElementById('localeSelect');
+    localeSelect.addEventListener('change', (e) => {
+      const newLocale = e.target.value;
+      form.setAttribute('data-locale', newLocale);
+      addLog('info', `Switched form locale to "${newLocale}".`);
+
+      // Re-validate fields that currently show errors so messages update into new language immediately
+      const invalidFields = form.querySelectorAll('.uv-input-error');
+      invalidFields.forEach(input => {
+        input.dispatchEvent(new Event('blur', { bubbles: true }));
+      });
+    });
   </script>
 </body>
 

@@ -7,14 +7,118 @@
  */
 
 const { rules: builtInRules, getRuleDefinition } = require('./rules');
+const { getGlobalLocale, setGlobalLocale, registerLocale } = require('./i18n');
+
+const resolveValidatorFn = (rule) => {
+  if (typeof rule === 'function') return rule;
+  if (typeof rule === 'string') {
+    let ruleName = rule;
+    let ruleArg = null;
+    const colonIdx = rule.indexOf(':');
+    if (colonIdx !== -1) {
+      ruleName = rule.slice(0, colonIdx);
+      ruleArg = rule.slice(colonIdx + 1);
+    }
+    const ruleDefinition = getRuleDefinition(builtInRules, ruleName);
+    if (ruleDefinition) {
+      return (typeof ruleDefinition === 'function' && ruleArg !== null)
+        ? ruleDefinition(ruleArg)
+        : ruleDefinition;
+    }
+  }
+  return null;
+};
 
 class UniversalValidator {
   /**
-   * Initializes the validator instance with a validation schema.
-   * @param {Object} schema - Dictionary mapping field names to arrays of rules.
+   * Sets the global default locale across all validator instances.
+   * @param {string} localeCode - E.g. 'en', 'es', 'fr', 'de', 'hi', 'zh'.
    */
-  constructor(schema) {
+  static setLocale(localeCode) {
+    setGlobalLocale(localeCode);
+  }
+
+  /**
+   * Gets the active global default locale.
+   * @returns {string}
+   */
+  static getLocale() {
+    return getGlobalLocale();
+  }
+
+  /**
+   * Registers a custom dictionary or extends an existing locale.
+   * @param {string} localeCode - Target locale code.
+   * @param {Object} messages - Dictionary of rule error messages.
+   */
+  static registerLocale(localeCode, messages) {
+    registerLocale(localeCode, messages);
+  }
+
+  /**
+   * Initializes the validator instance with a validation schema and optional configuration.
+   * @param {Object} schema - Dictionary mapping field names to arrays of rules.
+   * @param {Object} [options={}] - Instance configuration options.
+   * @param {Object} [options={}] - Instance configuration options.
+   * @param {string} [options.locale] - Specific locale override for this instance.
+   * @param {Object} [options.labels] - Map of field names to human-readable friendly labels.
+   */
+  constructor(schema, options = {}) {
     this.schema = schema || {};
+    this.locale = (options && typeof options.locale === 'string') ? options.locale : null;
+    this.labels = (options && options.labels && typeof options.labels === 'object') ? { ...options.labels } : {};
+  }
+
+  /**
+   * Sets the instance-specific locale override.
+   * @param {string} localeCode - Target locale code.
+   * @returns {this}
+   */
+  setLocale(localeCode) {
+    this.locale = localeCode;
+    return this;
+  }
+
+  /**
+   * Gets the active locale for this validator instance (falls back to global).
+   * @returns {string}
+   */
+  getLocale() {
+    return this.locale || getGlobalLocale();
+  }
+
+  /**
+   * Sets a friendly label for a specific field.
+   * @param {string} field - The field key name.
+   * @param {string} label - Human-friendly label (e.g. 'Email Address').
+   * @returns {this}
+   */
+  setLabel(field, label) {
+    if (typeof field === 'string' && typeof label === 'string') {
+      this.labels[field] = label;
+    }
+    return this;
+  }
+
+  /**
+   * Sets multiple friendly field labels at once.
+   * @param {Record<string, string>} labels - Key-value pair collection of field labels.
+   * @returns {this}
+   */
+  setLabels(labels) {
+    if (labels && typeof labels === 'object') {
+      Object.assign(this.labels, labels);
+    }
+    return this;
+  }
+
+  /**
+   * Gets the friendly label for a field, falling back to the field key itself.
+   * @param {string} field - The field key name.
+   * @returns {string}
+   */
+  getLabel(field) {
+    return (this.labels && this.labels[field]) || field;
   }
 
   /**
@@ -25,57 +129,65 @@ class UniversalValidator {
   validate(data) {
     let isValid = true;
     const errors = {};
-
-    // Fallback safely to an empty object if data is null, undefined, or malformed
     const safeData = (data && typeof data === 'object') ? data : {};
+    const locale = this.getLocale();
 
-    // Iterate through every field defined in the schema
     for (const field in this.schema) {
       const fieldRules = this.schema[field];
       const value = safeData[field] !== undefined && safeData[field] !== null ? safeData[field] : '';
+      if (!Array.isArray(fieldRules)) continue;
 
-      // Skip non-array rule definitions gracefully
-      if (!Array.isArray(fieldRules)) {
-        continue;
-      }
+      const context = {
+        locale,
+        field,
+        label: this.getLabel(field)
+      };
 
-      // Evaluate each rule assigned to the current field sequentially
       for (const rule of fieldRules) {
-        let errorMessage = null;
+        const validatorFn = resolveValidatorFn(rule);
+        if (typeof validatorFn !== 'function') continue;
 
-        // Handle string-based declarative rules (e.g., 'required', 'minLength:3')
-        if (typeof rule === 'string') {
-          let ruleName = rule;
-          let ruleArg = null;
-
-          // Parse rule arguments if parameter is passed using colon separator
-          if (rule.includes(':')) {
-            const parts = rule.split(':');
-            ruleName = parts[0];
-            ruleArg = parts[1];
-          }
-
-          // Securely retrieve rule definition protecting against prototype pollution
-          const ruleDefinition = getRuleDefinition(builtInRules, ruleName);
-
-          if (ruleDefinition) {
-            // Instantiate factory rules if arguments exist, or fallback to static rule
-            const validatorFn = (typeof ruleDefinition === 'function' && ruleArg !== null)
-              ? ruleDefinition(ruleArg)
-              : ruleDefinition;
-
-            if (typeof validatorFn === 'function') {
-              // Execute validation function passing field value and the complete safe data payload
-              errorMessage = validatorFn(value, safeData);
-            }
-          }
+        const errorMessage = validatorFn(value, safeData, null, context);
+        if (errorMessage && typeof errorMessage === 'string') {
+          errors[field] = errorMessage;
+          isValid = false;
+          break;
         }
-        // Handle custom programmatic inline functions passed directly into schema arrays
-        else if (typeof rule === 'function') {
-          errorMessage = rule(value, safeData);
-        }
+      }
+    }
 
-        // If validation fails, register error message, mark invalid, and short-circuit field checks
+    return { isValid, errors };
+  }
+
+  /**
+   * Asynchronously validates a complete data object payload against the defined schema rules,
+   * awaiting any asynchronous rule functions or remote network validations sequentially per field.
+   * @param {Object} data - Key-value pair collection of user input fields.
+   * @returns {Promise<{isValid: boolean, errors: Record<string, string>}>}
+   */
+  async validateAsync(data) {
+    let isValid = true;
+    const errors = {};
+    const safeData = (data && typeof data === 'object') ? data : {};
+    const locale = this.getLocale();
+
+    for (const field in this.schema) {
+      const fieldRules = this.schema[field];
+      const value = safeData[field] !== undefined && safeData[field] !== null ? safeData[field] : '';
+      if (!Array.isArray(fieldRules)) continue;
+
+      const context = {
+        locale,
+        field,
+        label: this.getLabel(field)
+      };
+
+      for (const rule of fieldRules) {
+        const validatorFn = resolveValidatorFn(rule);
+        if (typeof validatorFn !== 'function') continue;
+
+        const res = validatorFn(value, safeData, null, context);
+        const errorMessage = (res && typeof res.then === 'function') ? await res : res;
         if (errorMessage) {
           errors[field] = errorMessage;
           isValid = false;

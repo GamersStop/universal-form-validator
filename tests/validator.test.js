@@ -76,4 +76,84 @@ describe('UniversalValidator Engine', () => {
     expect(resultValid.errors.username).toBeUndefined();
   });
 
+  /**
+   * Verifies that rule arguments containing colons (e.g. URLs or regex patterns like pattern:^https?:\/\/)
+   * are safely preserved without truncation.
+   */
+  test('safely preserves rule arguments containing colons (e.g. regex patterns and URLs)', () => {
+    const schema = {
+      website: ['pattern:^https?://[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$']
+    };
+
+    const validator = new UniversalValidator(schema);
+
+    const validResult = validator.validate({ website: 'https://example.com' });
+    expect(validResult.isValid).toBe(true);
+    expect(validResult.errors.website).toBeUndefined();
+
+    const invalidResult = validator.validate({ website: 'ftp://not-http.com' });
+    expect(invalidResult.isValid).toBe(false);
+    expect(invalidResult.errors.website).toBe('Please match the requested format.');
+  });
+
+  /**
+   * Verifies validateAsync works with standard synchronous rules.
+   */
+  test('validateAsync resolves validation result for synchronous schemas', async () => {
+    const validator = new UniversalValidator({
+      username: ['required', 'minLength:3'],
+      email: ['required', 'email']
+    });
+
+    const validResult = await validator.validateAsync({
+      username: 'john',
+      email: 'john@example.com'
+    });
+    expect(validResult.isValid).toBe(true);
+    expect(Object.keys(validResult.errors).length).toBe(0);
+
+    const invalidResult = await validator.validateAsync({
+      username: 'j',
+      email: 'invalid-email'
+    });
+    expect(invalidResult.isValid).toBe(false);
+    expect(invalidResult.errors.username).toBe('Must be at least 3 characters long.');
+    expect(invalidResult.errors.email).toBe('Please enter a valid email address.');
+  });
+
+  /**
+   * Verifies validateAsync executes asynchronous rule functions and preserves fail-fast behavior.
+   */
+  test('validateAsync awaits asynchronous rules and maintains fail-fast order', async () => {
+    let secondAsyncRuleCalled = false;
+
+    const schema = {
+      username: [
+        'required',
+        async (value) => {
+          await new Promise(resolve => setTimeout(resolve, 10));
+          return value === 'taken_user' ? 'Username is already taken.' : null;
+        },
+        async () => {
+          secondAsyncRuleCalled = true;
+          return null;
+        }
+      ]
+    };
+
+    const validator = new UniversalValidator(schema);
+
+    // Test async rule failure
+    const failResult = await validator.validateAsync({ username: 'taken_user' });
+    expect(failResult.isValid).toBe(false);
+    expect(failResult.errors.username).toBe('Username is already taken.');
+    expect(secondAsyncRuleCalled).toBe(false); // Fail-fast short-circuit verified
+
+    // Test async rule success
+    const passResult = await validator.validateAsync({ username: 'available_user' });
+    expect(passResult.isValid).toBe(true);
+    expect(passResult.errors.username).toBeUndefined();
+    expect(secondAsyncRuleCalled).toBe(true);
+  });
+
 });

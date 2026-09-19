@@ -22,6 +22,11 @@ describe('Validation Rules Dictionary', () => {
     expect(rules.required('hello')).toBeNull(); // null means it passed
   });
 
+  test('required rule handles array values (e.g. checkbox groups)', () => {
+    expect(rules.required([])).toBe('This field is required.');
+    expect(rules.required(['option1'])).toBeNull();
+  });
+
   /**
    * Verifies email validation constraints.
    */
@@ -214,8 +219,13 @@ describe('Validation Rules Dictionary', () => {
    * Verifies system date (sysdate) min/max date-time comparisons and malformed input handling.
    */
   test('minDate and maxDate rules validate against sysdate', () => {
-    const futureDate = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-    const pastDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const dFuture = new Date();
+    dFuture.setDate(dFuture.getDate() + 2);
+    const futureDate = `${dFuture.getFullYear()}-${String(dFuture.getMonth() + 1).padStart(2, '0')}-${String(dFuture.getDate()).padStart(2, '0')}`;
+
+    const dPast = new Date();
+    dPast.setDate(dPast.getDate() - 2);
+    const pastDate = `${dPast.getFullYear()}-${String(dPast.getMonth() + 1).padStart(2, '0')}-${String(dPast.getDate()).padStart(2, '0')}`;
 
     expect(rules.minDate(futureDate)).toBeNull();
     expect(rules.minDate(pastDate)).toBe('Date must be today or in the future.');
@@ -245,6 +255,196 @@ describe('Validation Rules Dictionary', () => {
     expect(() => rules.register('__proto__', () => { })).toThrow('SecurityError');
     expect(() => rules.register('constructor', () => { })).toThrow('SecurityError');
     expect(() => rules.register('prototype', () => { })).toThrow('SecurityError');
+  });
+
+  /**
+   * Phase 2: Remote asynchronous validation rule
+   */
+  describe('remote rule', () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    test('passes when remote endpoint returns valid: true', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ valid: true })
+      });
+
+      const validatorFn = rules.remote('https://api.example.com/check-user,username');
+      const result = await validatorFn('new_user');
+      expect(result).toBeNull();
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.example.com/check-user?username=new_user',
+        expect.objectContaining({ method: 'GET' })
+      );
+    });
+
+    test('fails when remote endpoint returns valid: false with custom message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ valid: false, message: 'Username is already taken.' })
+      });
+
+      const validatorFn = rules.remote('https://api.example.com/check-user');
+      const result = await validatorFn('existing_user');
+      expect(result).toBe('Username is already taken.');
+    });
+
+    test('fails when remote endpoint returns HTTP 400 with error message', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ message: 'Invalid domain name.' })
+      });
+
+      const validatorFn = rules.remote('https://api.example.com/check-domain');
+      const result = await validatorFn('bad.domain');
+      expect(result).toBe('Invalid domain name.');
+    });
+
+    test('bypasses remote validation for empty strings', async () => {
+      global.fetch = jest.fn();
+      const validatorFn = rules.remote('https://api.example.com/check');
+      const result = await validatorFn('');
+      expect(result).toBeNull();
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Phase 2: Conditional rules (requiredIf, requiredWith, requiredWithout)
+   */
+  describe('Conditional Rules', () => {
+    test('requiredIf enforces validation only when target field matches expected value', () => {
+      const validatorFn = rules.requiredIf('paymentMethod,card');
+
+      // Target field matches 'card' -> field is required
+      expect(validatorFn('', { paymentMethod: 'card' })).toBe('This field is required.');
+      expect(validatorFn('4111222233334444', { paymentMethod: 'card' })).toBeNull();
+
+      // Target field is 'cash' -> field is optional
+      expect(validatorFn('', { paymentMethod: 'cash' })).toBeNull();
+      expect(validatorFn(undefined, { paymentMethod: 'cash' })).toBeNull();
+    });
+
+    test('requiredWith enforces validation when target field has any non-empty value', () => {
+      const validatorFn = rules.requiredWith('referralCode');
+
+      // Target field has value -> field is required
+      expect(validatorFn('', { referralCode: 'FRIEND20' })).toBe('This field is required.');
+      expect(validatorFn('John', { referralCode: 'FRIEND20' })).toBeNull();
+
+      // Target field is empty -> field is optional
+      expect(validatorFn('', { referralCode: '' })).toBeNull();
+      expect(validatorFn('', {})).toBeNull();
+    });
+
+    test('requiredWithout enforces validation when target field is missing or empty', () => {
+      const validatorFn = rules.requiredWithout('phone');
+
+      // Phone is empty -> email is required
+      expect(validatorFn('', { phone: '' })).toBe('This field is required.');
+      expect(validatorFn('test@example.com', { phone: '' })).toBeNull();
+
+      // Phone is provided -> email is optional
+      expect(validatorFn('', { phone: '1234567890' })).toBeNull();
+    });
+  });
+
+  /**
+   * Phase 2: Expanded Enterprise Ruleset
+   */
+  describe('Enterprise Ruleset', () => {
+    test('numeric rule validates integers, negative numbers, and decimals', () => {
+      expect(rules.numeric('123')).toBeNull();
+      expect(rules.numeric('-45.67')).toBeNull();
+      expect(rules.numeric('0')).toBeNull();
+      expect(rules.numeric('')).toBeNull(); // optional if empty
+
+      expect(rules.numeric('abc')).toBe('Must be a valid number.');
+      expect(rules.numeric('12a3')).toBe('Must be a valid number.');
+    });
+
+    test('min and max rules validate numeric bounds', () => {
+      const min18 = rules.min(18);
+      expect(min18('18')).toBeNull();
+      expect(min18('21')).toBeNull();
+      expect(min18('17')).toBe('Must be at least 18.');
+      expect(min18('')).toBeNull();
+
+      const max100 = rules.max(100);
+      expect(max100('100')).toBeNull();
+      expect(max100('50')).toBeNull();
+      expect(max100('101')).toBe('Must be no more than 100.');
+    });
+
+    test('between rule validates numeric range inclusive', () => {
+      const between10and50 = rules.between('10,50');
+      expect(between10and50('10')).toBeNull();
+      expect(between10and50('30')).toBeNull();
+      expect(between10and50('50')).toBeNull();
+      expect(between10and50('')).toBeNull();
+
+      expect(between10and50('9')).toBe('Must be between 10 and 50.');
+      expect(between10and50('51')).toBe('Must be between 10 and 50.');
+    });
+
+    test('sameAs rule checks equivalence with another field', () => {
+      const sameAsPassword = rules.sameAs('password');
+      expect(sameAsPassword('secret', { password: 'secret' })).toBeNull();
+      expect(sameAsPassword('different', { password: 'secret' })).toBe('Fields do not match.');
+    });
+
+    test('regex rule validates patterns with optional flags', () => {
+      const caseInsensitive = rules.regex('^[a-z]+$,i');
+      expect(caseInsensitive('HelloWorld')).toBeNull();
+      expect(caseInsensitive('123')).toBe('Please match the requested format.');
+
+      const strictDigits = rules.regex('^\\d{4}$');
+      expect(strictDigits('1234')).toBeNull();
+      expect(strictDigits('12345')).toBe('Please match the requested format.');
+    });
+
+    test('json rule validates parseable JSON strings', () => {
+      expect(rules.json('{"name":"John","age":30}')).toBeNull();
+      expect(rules.json('[1, 2, 3]')).toBeNull();
+      expect(rules.json('')).toBeNull();
+
+      expect(rules.json('{bad json}')).toBe('Must be valid JSON.');
+      expect(rules.json('just a string')).toBe('Must be valid JSON.');
+    });
+
+    test('uuid rule validates RFC UUID format', () => {
+      expect(rules.uuid('123e4567-e89b-12d3-a456-426614174000')).toBeNull();
+      expect(rules.uuid('c9b4e132-7201-447b-a19e-e6a64f434720')).toBeNull();
+      expect(rules.uuid('')).toBeNull();
+
+      expect(rules.uuid('not-a-uuid')).toBe('Must be a valid UUID.');
+      expect(rules.uuid('123e4567-e89b-62d3-a456-426614174000')).toBe('Must be a valid UUID.'); // invalid version 6
+    });
+
+    test('ip rule validates IPv4 and IPv6 addresses', () => {
+      expect(rules.ip('192.168.1.1')).toBeNull();
+      expect(rules.ip('2001:0db8:85a3:0000:0000:8a2e:0370:7334')).toBeNull();
+      expect(rules.ip('')).toBeNull();
+
+      expect(rules.ip('999.999.999.999')).toBe('Must be a valid IP address.');
+      expect(rules.ip('not-an-ip')).toBe('Must be a valid IP address.');
+
+      // Test specific v4 / v6 modes
+      const ipV4 = rules.ip('v4');
+      expect(ipV4('10.0.0.1')).toBeNull();
+      expect(ipV4('2001:db8::1')).toBe('Must be a valid IPv4 address.');
+
+      const ipV6 = rules.ip('v6');
+      expect(ipV6('::1')).toBeNull();
+      expect(ipV6('127.0.0.1')).toBe('Must be a valid IPv6 address.');
+    });
   });
 
 });

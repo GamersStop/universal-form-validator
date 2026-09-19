@@ -26,7 +26,7 @@ describe('Hard-Level Stress & Performance Tests', () => {
         expect(Object.keys(result.errors).length).toBe(0);
 
         console.log(`Validated 1,000 fields in ${endTime - startTime}ms`);
-        expect(endTime - startTime).toBeLessThan(50);
+        expect(endTime - startTime).toBeLessThan(20);
     });
 
     test('handles deeply malformed or null/undefined payloads safely without throwing', () => {

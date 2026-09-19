@@ -1,9 +1,7 @@
 /**
  * Project Name: Universal Form Builder (Validator Engine)
  * Author: Mayuresh Pandit
- * Description: Main entry point module. Exports core validation classes, 
- *              auto-binding utilities, and rule dictionaries for both CommonJS 
- *              environments and browser global window injection.
+ * Description: ESM entry point module exporting named and default exports.
  */
 
 const { UniversalValidator } = require('./validator');
@@ -19,7 +17,6 @@ const {
   deriveFieldLabel
 } = require('./i18n');
 
-// Expose classes and rules to the browser global scope if running in a browser environment
 if (typeof window !== 'undefined') {
   window.UniversalValidator = UniversalValidator;
   window.UniversalValidatorRules = rules;
@@ -33,15 +30,19 @@ if (typeof window !== 'undefined') {
   window.deriveFieldLabel = deriveFieldLabel;
 }
 
-module.exports = {
+const setLocale = setGlobalLocale;
+const getLocale = getGlobalLocale;
+
+export {
   UniversalValidator,
   initAutoBind,
   resetFormState,
   rules,
-  setLocale: setGlobalLocale,
-  getLocale: getGlobalLocale,
+  setLocale,
+  getLocale,
   registerLocale,
   getMessage,
   interpolate,
   deriveFieldLabel
 };
+export default UniversalValidator;

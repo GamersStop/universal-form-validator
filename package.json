@@ -1,13 +1,40 @@
 {
   "name": "universal-form-validator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A framework-agnostic, zero-dependency form validation engine.",
-  "main": "src/index.js",
-  "module": "src/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "unpkg": "dist/validator.min.js",
+  "jsdelivr": "dist/validator.min.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GamersStop/universal-form-validator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GamersStop/universal-form-validator/issues"
+  },
+  "homepage": "https://github.com/GamersStop/universal-form-validator#readme",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "build": "echo \"No build step required\""
+    "typecheck": "tsc --noEmit",
+    "build": "node build.js",
+    "example:ts": "tsx examples/example.ts",
+    "example:serve": "node examples/server.js",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "keywords": [
     "form",
@@ -19,7 +46,9 @@
   ],
   "author": "Mayuresh Pandit",
   "license": "MIT",
+  "dependencies": {},
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "eslint": "^10.8.0",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",

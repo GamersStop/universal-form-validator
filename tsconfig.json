@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true,
+    "lib": ["DOM", "ES2022"],
+    "types": ["node", "jest"]
+  },
+  "include": ["src/index.d.ts", "tests/types-check.ts", "examples/example.ts"]
+}

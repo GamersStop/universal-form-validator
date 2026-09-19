@@ -1,0 +1,42 @@
+name: Publish Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build, Test & Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (v24 with npm OIDC registry)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Install Clean Dependencies
+        run: npm ci
+
+      - name: Verify TypeScript Types
+        run: npm run typecheck
+
+      - name: Build Distribution Bundles
+        run: npm run build
+
+      - name: Execute Full Test Suite
+        run: npm test
+
+      - name: Publish to npm with Provenance Attestation
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
